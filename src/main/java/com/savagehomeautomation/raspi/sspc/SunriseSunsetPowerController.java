@@ -3,7 +3,7 @@ package com.savagehomeautomation.raspi.sspc;
  * **********************************************************************
  * ORGANIZATION  :  savagehomeautomation.com
  * PROJECT       :  Sunrise/Sunset Power Controller 
- * FILENAME      :  SSPC.java  
+ * FILENAME      :  SunriseSunsetPowerController.java  
  * 
  * More information about this project can be found here:  
  * http://www.savagehomeautomation.com/projects/raspberry-pi-sunrise-sunset-timer-for-christmas-lights.html

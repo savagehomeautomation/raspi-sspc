@@ -1,0 +1,18 @@
+--------------------
+PROJECT BUILD
+--------------------
+
+Use the following command to build this project:
+
+> mvn clean install
+
+
+--------------------
+DOWNLOADS
+--------------------
+
+Use the following Maven command to deploy the downloadable artifacts the Github downloads page.
+(Note, you must have a "github" site credentials defined in your private Maven settings.xml file.
+ Please see this README for detail on the Maven plugin performing this task: https://github.com/github/maven-plugins/blob/master/README.md)
+
+> mvn clean install ghDownloads:upload
