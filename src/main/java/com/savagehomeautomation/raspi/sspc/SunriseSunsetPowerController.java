@@ -27,16 +27,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.pi4j.io.gpio.GpioController;
-import com.pi4j.io.gpio.GpioFactory;
-import com.pi4j.io.gpio.GpioPinDigitalInput;
-import com.pi4j.io.gpio.GpioPinDigitalOutput;
-import com.pi4j.io.gpio.PinPullResistance;
-import com.pi4j.io.gpio.PinState;
-import com.pi4j.io.gpio.RaspiPin;
-import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
-import com.pi4j.io.gpio.event.GpioPinListenerDigital;
-import com.pi4j.io.gpio.trigger.GpioToggleStateTrigger;
+import com.pi4j.device.power.PowerController;
 import com.savagehomeautomation.utility.SunriseSunset;
 
 /**
@@ -57,9 +48,12 @@ public class SunriseSunsetPowerController
     private EventType nextEvent;
     private Date nextSunriseDate; 
     private Date nextSunsetDate;
-    private GpioController gpio;
-    private GpioPinDigitalOutput powerController;
-    private GpioPinDigitalInput overrideSwitch;
+    private PowerController powerController;
+    
+    public SunriseSunsetPowerController(PowerController powerController)
+    {
+        this.powerController = powerController;
+    }
     
     /**
      * Start the controller.
@@ -107,25 +101,8 @@ public class SunriseSunsetPowerController
         displayMenuOptions();
 
         // create timer, GPIO controller, and sunrise/sunset calculator
-        timer = new Timer();
-        gpio  = GpioFactory.getInstance();
+        timer = new Timer();        
         ss = new SunriseSunset();
-        
-        // provision GPIO pins : 
-        //   GPIO PIN #0 == OVERRIDE SWITCH
-        //   GPIO PIN #1 == POWER CONTROLLER
-        overrideSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, "OverrideSwitch", PinPullResistance.PULL_DOWN);
-        powerController = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, "PowerController");
-        
-        // force power controller to OFF if the program is shutdown
-        powerController.setShutdownOptions(true,PinState.LOW);
-
-        // create a gpio toggle trigger on the override switch input pin; 
-        // when the input is detected, toggle the power controller state
-        overrideSwitch.addTrigger(new GpioToggleStateTrigger(PinState.HIGH, powerController));
-        
-        // create a listener for the override switch
-        overrideSwitch.addListener(new OverrideSwitchListener());
         
         // schedule starting event; apply initial power controller state
         switch(scheduleNextEvent())
@@ -133,19 +110,19 @@ public class SunriseSunsetPowerController
             case SunriseToday:
             {
                 // if the next event is sunrise, then turn power ON
-                powerController.high();
+                powerController.on();
                 break;
             }
             case SunsetToday:
             {
                 // if the next event is sunset, then turn power OFF
-                powerController.low();
+                powerController.off();
                 break;
             }
             case SunriseTomorrow:
             {
                 // if the next event is sunrise, then turn power ON
-                powerController.high();
+                powerController.on();
                 break;
             }
         }
@@ -158,7 +135,7 @@ public class SunriseSunsetPowerController
             if(command.equalsIgnoreCase("on"))
             {
                 // turn ON power
-                powerController.high();
+                powerController.on();
                 
                 System.out.println("---------------------------------");
                 System.out.println("[OVERRIDE] POWER STATE ON");
@@ -168,7 +145,7 @@ public class SunriseSunsetPowerController
             else if(command.equalsIgnoreCase("off"))
             {
                 // turn OFF power
-                powerController.low();
+                powerController.off();
                 
                 System.out.println("---------------------------------");
                 System.out.println("[OVERRIDE] POWER STATE OFF");
@@ -177,7 +154,7 @@ public class SunriseSunsetPowerController
             else if(command.equalsIgnoreCase("status"))
             {
                 // determine and display current power controller state
-                if(powerController.isHigh())
+                if(powerController.isOn())
                 {
                     System.out.println("---------------------------------");
                     System.out.println("[STATUS] POWER STATE IS : ON");
@@ -452,7 +429,7 @@ public class SunriseSunsetPowerController
         public void run()
         {
             // turn OFF power
-            powerController.low();
+            powerController.off();
             
             System.out.println("-----------------------------------");
             System.out.println("[SUNRISE] POWER HAS BEEN TURNED OFF");
@@ -476,7 +453,7 @@ public class SunriseSunsetPowerController
         public void run()
         {
             // turn ON power
-            powerController.high();
+            powerController.on();
             
             System.out.println("-----------------------------------");
             System.out.println("[SUNSET]  POWER HAS BEEN TURNED ON");
@@ -493,18 +470,18 @@ public class SunriseSunsetPowerController
      * 
      * @author Robert Savage
      */
-    private class OverrideSwitchListener implements GpioPinListenerDigital
-    {
-        @Override
-        public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event)
-        {
-            if(event.getState().isHigh())
-            {
-                System.out.println("---------------------------------");
-                System.out.println("[OVERRIDE] POWER STATE TOGGLED");
-                System.out.println("---------------------------------");
-            }
-        }
-    }    
+//    private class OverrideSwitchListener implements GpioPinListenerDigital
+//    {
+//        @Override
+//        public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event)
+//        {
+//            if(event.getState().isHigh())
+//            {
+//                System.out.println("---------------------------------");
+//                System.out.println("[OVERRIDE] POWER STATE TOGGLED");
+//                System.out.println("---------------------------------");
+//            }
+//        }
+//    }    
 }
 

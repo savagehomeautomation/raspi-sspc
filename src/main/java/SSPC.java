@@ -1,3 +1,9 @@
+import com.pi4j.device.power.impl.GpioPowerController;
+import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinState;
+import com.pi4j.io.gpio.RaspiPin;
 import com.savagehomeautomation.raspi.sspc.SunriseSunsetPowerController;
 /*
  * **********************************************************************
@@ -34,8 +40,30 @@ public class SSPC
 {
     public static void main(String[] args)
     {
+        // create GPIO controller
+        GpioController gpio  = GpioFactory.getInstance();
+
+        // provision GPIO pins : 
+        //   GPIO PIN #0 == OVERRIDE SWITCH
+        //   GPIO PIN #1 == POWER CONTROLLER
+        //GpioPinDigitalInput overrideSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, "OverrideSwitch", PinPullResistance.PULL_DOWN);
+        GpioPinDigitalOutput outputPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, "PowerController");
+        
+        // force power controller to OFF if the program is shutdown
+        outputPin.setShutdownOptions(true,PinState.LOW);
+        
+        // create a gpio toggle trigger on the override switch input pin; 
+        // when the input is detected, toggle the power controller state
+        //overrideSwitch.addTrigger(new GpioToggleStateTrigger(PinState.HIGH, powerController));
+        
+        // create a listener for the override switch
+        //overrideSwitch.addListener(new OverrideSwitchListener());
+
+        // create power controller device component
+        GpioPowerController powerController = new GpioPowerController(outputPin, PinState.HIGH, PinState.LOW);
+        
         // create controller instance and start it up
-        SunriseSunsetPowerController sspc = new SunriseSunsetPowerController();
+        SunriseSunsetPowerController sspc = new SunriseSunsetPowerController(powerController);
         sspc.start(args);
     }
 }

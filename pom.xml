@@ -68,6 +68,11 @@
 			<artifactId>pi4j-core</artifactId>
 			<version>0.0.4-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>com.pi4j</groupId>
+			<artifactId>pi4j-device</artifactId>
+			<version>0.0.4-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<!-- BUILD INSTRUCTIONS -->
