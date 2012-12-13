@@ -29,6 +29,10 @@ Raspberry Pi - Sunrise / Sunset Power Controller
 
 ## RELEASES
 
+2012-12-12 :: 1.0.1-SNAPSHOT
+ 
+    *  Development version - NOT RELEASED
+
 2012-12-04 :: 1.0.0
  
     *  Initial release

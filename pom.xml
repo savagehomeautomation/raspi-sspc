@@ -5,7 +5,7 @@
 	<!-- MAVEN ARTIFACT INFORMATION -->
 	<groupId>com.savagehomeautomation.raspi</groupId>
 	<artifactId>raspi-sspc</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>Raspberry Pi - Sunrise / Sunset Power Controller</name>
 	<description>Raspberry Pi - Sunrise / Sunset Power Controller</description>
 
