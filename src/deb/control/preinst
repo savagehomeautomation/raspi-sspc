@@ -1,0 +1,5 @@
+#!/bin/sh
+mkdir /opt/sspc
+mkdir /opt/sspc/lib
+mkdir /opt/sspc/bin
+mkdir /opt/sspc/config 

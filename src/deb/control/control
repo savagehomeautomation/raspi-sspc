@@ -1,0 +1,9 @@
+Package: sspc
+Version: [[version]]
+Section: misc
+Priority: optional
+Architecture: all
+Depends:
+Maintainer: Robert Savage - www.savageHomeautomation.com
+Description: Sunrise/Sunset Power Controller Application for the Raspberry Pi platform
+Distribution: development

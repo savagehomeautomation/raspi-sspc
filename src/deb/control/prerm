@@ -1,0 +1,3 @@
+#!/bin/sh
+service sspc stop
+update-rc.d -f sspc remove

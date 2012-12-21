@@ -1,4 +1,8 @@
-import com.pi4j.device.power.impl.GpioPowerController;
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+
+import com.pi4j.component.power.impl.GpioPowerComponent;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
@@ -36,9 +40,19 @@ import com.savagehomeautomation.raspi.sspc.SunriseSunsetPowerController;
  * @author Robert Savage
  * @see http://www.savagehomeautomation.com/projects/raspberry-pi-sunrise-sunset-timer-for-christmas-lights.html
  */
-public class SSPC
+public class SSPC implements Daemon
 {
-    public static void main(String[] args)
+    // create controller instance and start it up
+    private static SunriseSunsetPowerController sspc;
+    private static GpioPowerComponent powerController;
+    
+    public static void main(String[] args) throws InterruptedException
+    {
+        initializeApplicationConfiguration();
+        sspc.start(false);
+    }
+    
+    private static void initializeApplicationConfiguration()
     {
         // create GPIO controller
         GpioController gpio  = GpioFactory.getInstance();
@@ -60,10 +74,34 @@ public class SSPC
         //overrideSwitch.addListener(new OverrideSwitchListener());
 
         // create power controller device component
-        GpioPowerController powerController = new GpioPowerController(outputPin, PinState.HIGH, PinState.LOW);
+        powerController = new GpioPowerComponent(outputPin, PinState.HIGH, PinState.LOW);
         
         // create controller instance and start it up
-        SunriseSunsetPowerController sspc = new SunriseSunsetPowerController(powerController);
-        sspc.start(args);
+        sspc = new SunriseSunsetPowerController(powerController);
+    }
+
+    @Override
+    public void destroy()
+    {
+        sspc = null;
+    }
+
+    @Override
+    public void init(DaemonContext context) throws DaemonInitException, Exception
+    {
+    }
+
+    @Override
+    public void start() throws Exception
+    {
+        initializeApplicationConfiguration();
+        sspc.start(true);
+    }
+
+    @Override
+    public void stop() throws Exception
+    {
+        sspc.stop();
+        powerController.off();
     }
 }

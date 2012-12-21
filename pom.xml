@@ -58,6 +58,14 @@
 
 		<!-- GITHUB PROPERTIES -->
 		<github.global.server>github</github.global.server>
+		
+		<!-- DEFAULT RASPBERRY PI PROPERTIES -->
+		<pi.host>pi-sf-wifi</pi.host>
+		<pi.port>22</pi.port>
+		<pi.user>pi</pi.user>
+		<pi.password>raspberry</pi.password>
+		<pi.transfer>true</pi.transfer>
+		<pi.dirCopyTo>/home/pi</pi.dirCopyTo>
 
 	</properties>
 
@@ -66,17 +74,35 @@
 		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-core</artifactId>
-			<version>0.0.4-SNAPSHOT</version>
+			<version>0.0.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.pi4j</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-device</artifactId>
-			<version>0.0.4-SNAPSHOT</version>
+			<version>0.0.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.pi4j</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>commons-daemon</groupId>
+			<artifactId>commons-daemon</artifactId>
+			<version>1.0.10</version>
 		</dependency>
 	</dependencies>
 
 	<!-- BUILD INSTRUCTIONS -->
 	<build>
+		<finalName>sspc-${project.version}</finalName>
 		<resources>
 			<resource>
 				<directory>${project.build.directory}</directory>
@@ -138,6 +164,256 @@
 				</executions>
 			</plugin>
 
+			<!-- ACQUIRE & STAGE DEPENDENCIES -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/distro-contents/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
+							<excludeTransitive>true</excludeTransitive>
+							<stripVersion>false</stripVersion>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>com.github.goldin</groupId>
+				<artifactId>copy-maven-plugin</artifactId>
+				<version>0.2.5</version>
+				<executions>
+					<execution>
+						<id>create-archive</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<targetPath>${project.build.directory}/distro-contents/config</targetPath>
+									<directory>${project.basedir}/src/main/resources</directory>
+									<includes>
+										<include>*.properties</include>
+									</includes>
+								</resource>
+								<resource>
+									<targetPath>${project.build.directory}/distro-contents/bin</targetPath>
+									<directory>${project.basedir}/src/main/resources</directory>
+									<includes>
+										<include>start</include>
+										<include>stop</include>
+										<include>debug</include>
+									</includes>
+								</resource>
+								<resource>
+									<targetPath>${project.build.directory}/distro-contents</targetPath>
+									<directory>${project.basedir}</directory>
+									<includes>
+										<include>LICENSE.txt</include>
+										<include>NOTICE.txt</include>
+										<include>README.md</include>
+									</includes>
+								</resource>
+								<resource>
+									<targetPath>${project.build.directory}/distro-contents/lib</targetPath>
+									<directory>${project.build.directory}</directory>
+									<includes>
+										<include>*.jar</include>
+									</includes>
+								</resource>
+								
+								<!-- Create final archive and attach it as Maven artifact -->
+								<resource>
+									<targetPath>${project.build.directory}/${project.build.finalName}.zip</targetPath>
+									<directory>${project.build.directory}/distro-contents</directory>
+									<pack>true</pack>
+									<attachArtifact>true</attachArtifact>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- CREATE DEBIAN (.DEB) PACKAGE -->
+			<plugin>
+				<artifactId>jdeb</artifactId>
+				<groupId>org.vafer</groupId>
+				<version>0.11</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jdeb</goal>
+						</goals>
+						<configuration>
+							<attach>true</attach>
+							<verbose>true</verbose>
+							<deb>${project.build.directory}/${project.build.finalName}.deb</deb>
+							<installDir>/opt/sspc</installDir>
+							<dataSet>
+								<data>
+									<src>${project.build.directory}/distro-contents/LICENSE.txt</src>
+									<dst>LICENSE</dst>
+									<type>file</type>
+									<dst>/opt/sspc/LICENSE</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/NOTICE.txt</src>
+									<type>file</type>
+									<dst>/opt/sspc/NOTICE</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/README.md</src>
+									<type>file</type>
+									<dst>/opt/sspc/README</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/lib/pi4j-core-0.0.4.jar</src>
+									<type>file</type>
+									<dst>/opt/sspc/lib/pi4j-core-0.0.4.jar</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/lib/pi4j-device-0.0.4.jar</src>
+									<type>file</type>
+									<dst>/opt/sspc/lib/pi4j-device-0.0.4.jar</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/lib/commons-daemon-1.0.10.jar</src>
+									<type>file</type>
+									<dst>/opt/sspc/lib/commons-daemon-1.0.10.jar</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/lib/${project.build.finalName}.jar</src>
+									<type>file</type>
+									<dst>/opt/sspc/lib/${project.build.finalName}.jar</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/config/config.properties</src>
+									<type>file</type>
+									<dst>/opt/sspc/config/config.properties</dst>
+								</data>
+								<data>
+									<src>${project.build.directory}/distro-contents/bin</src>
+									<type>directory</type>
+	                                <mapper>
+	                                    <type>perm</type>
+	                                    <prefix>/opt/sspc/bin</prefix>
+	                                    <filemode>755</filemode>
+	                                </mapper>									
+								</data>
+								<data>
+									<src>${project.basedir}/src/main/resources/sspc</src>
+									<type>file</type>
+	                                <mapper>
+	                                    <type>perm</type>
+	                                    <prefix>/etc/init.d</prefix>
+	                                    <filemode>755</filemode>
+	                                </mapper>									
+								</data>
+							</dataSet>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<!-- OPTIONALLY DEPLOY THE FINAL .DEB TO THE RASBERRY PI -->
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+
+					<!-- copy the .DEB pacakge file to the Raspberry Pi platform platform -->
+					<execution>
+						<id>transfer-compiled-debian-package</id>
+						<phase>install</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<taskdef resource="net/sf/antcontrib/antcontrib.properties"
+									classpathref="maven.plugin.classpath" />
+								<if>
+									<equals arg1="${pi.transfer}" arg2="true" />
+									<then>
+										<!-- copy the JAR file to the Raspberry Pi -->
+										<scp
+											file="${project.build.directory}/${project.build.finalName}.deb"
+											todir="${pi.user}:${pi.password}@${pi.host}:${pi.dirCopyTo}"
+											port="${pi.port}" trust="true" verbose="true" failonerror="true">
+										</scp>
+									</then>
+								</if>
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant-jsch</artifactId>
+						<version>1.7.1</version>
+					</dependency>
+					<dependency>
+						<groupId>com.jcraft</groupId>
+						<artifactId>jsch</artifactId>
+						<version>0.1.42</version>
+					</dependency>
+					<dependency>
+						<groupId>ant-contrib</groupId>
+						<artifactId>ant-contrib</artifactId>
+						<version>20020829</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-dependency-plugin
+										</artifactId>
+										<versionRange>
+											[2.1,)
+										</versionRange>
+										<goals>
+											<goal>
+												copy-dependencies
+											</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 </project>

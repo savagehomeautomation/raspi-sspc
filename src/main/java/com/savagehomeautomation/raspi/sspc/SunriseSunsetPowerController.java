@@ -22,12 +22,17 @@ package com.savagehomeautomation.raspi.sspc;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.pi4j.device.power.PowerController;
+import com.pi4j.component.power.Power;
 import com.savagehomeautomation.utility.SunriseSunset;
 
 /**
@@ -48,11 +53,24 @@ public class SunriseSunsetPowerController
     private EventType nextEvent;
     private Date nextSunriseDate; 
     private Date nextSunsetDate;
-    private PowerController powerController;
+    private Power powerController;
+    private boolean shuttingDown = false;
     
-    public SunriseSunsetPowerController(PowerController powerController)
+    public SunriseSunsetPowerController(Power powerController)
     {
         this.powerController = powerController;
+    }
+
+    /**
+     * Stop the controller.
+     */
+    public void stop()
+    {
+        // update shutting down flag
+        shuttingDown = true;
+        
+        // stop timer 
+        timer.cancel();
     }
     
     /**
@@ -60,50 +78,101 @@ public class SunriseSunsetPowerController
      * Run the main program loop until user exits.
      * 
      * @param args command line arguments
+     * @throws InterruptedException 
      */
-    public void start(String[] args)
+    public void start(boolean runAsService) throws InterruptedException
     {
-        // display welcome screen
-        displayWelcome();
+        // read settings from properties file
+        Properties prop = new Properties(); 
+        try 
+        {
+            InputStream propertiesInputStream = null;
+            
+            File propertiesFile = new File("config.properties");
+            if(propertiesFile.exists())
+            {
+                propertiesInputStream = new FileInputStream(propertiesFile);
+            }
+            else
+            {
+                propertiesFile = new File("../config/config.properties");
+                if(propertiesFile.exists())
+                {
+                    propertiesInputStream = new FileInputStream(propertiesFile);
+                }
+            }
+            
+            // use default properties file if needed
+            if(propertiesInputStream == null)
+                propertiesInputStream = SunriseSunsetPowerController.class.getClassLoader().getResourceAsStream("config.properties");
+            
+            // load a properties file from class path, inside static method
+            if(propertiesInputStream != null)
+            {
+                prop.load(propertiesInputStream);
+                propertiesInputStream.close();
+    
+                String latitudeSetting = prop.getProperty("latitude");
+                if(latitudeSetting != null)
+                    latitude = Double.parseDouble(latitudeSetting);
+    
+                String longitudeSetting = prop.getProperty("longitude");
+                if(longitudeSetting != null)
+                    longitude = Double.parseDouble(longitudeSetting);
+            }
+
+            System.out.println("LATITUDE  = " + latitude);
+            System.out.println("LONGITUDE = " + longitude);
+        } 
+        catch (IOException ex) 
+        {
+            ex.printStackTrace();
+        }
         
         // attempt to read command line arguments
-        for(String arg : args)
-        {
-            if(arg.startsWith("-longitude="))
-            {
-                try
-                {
-                    longitude = Double.parseDouble(arg.substring(11));
-                    System.out.println("LONGITUDE = " + longitude);
-                }
-                catch(Exception ex){}
-            }
-            else if(arg.startsWith("-latitude="))
-            {
-                try
-                {
-                    latitude = Double.parseDouble(arg.substring(10));
-                    System.out.println("LATITUDE  = " + latitude);
-                }
-                catch(Exception ex){}
-            }
-        }
-
-        // prompt user for latitude if needed
-        if(latitude == null)
-            promptForLatitude();
-        
-        // prompt user for longitude if needed
-        if(longitude == null)
-            promptForLongitude();
-
-        // display welcome user options menu
-        displayMenuOptions();
+//        for(String arg : args)
+//        {
+//            if(arg.startsWith("-longitude="))
+//            {
+//                try
+//                {
+//                    longitude = Double.parseDouble(arg.substring(11));
+//                    System.out.println("LONGITUDE = " + longitude);
+//                }
+//                catch(Exception ex){}
+//            }
+//            else if(arg.startsWith("-latitude="))
+//            {
+//                try
+//                {
+//                    latitude = Double.parseDouble(arg.substring(10));
+//                    System.out.println("LATITUDE  = " + latitude);
+//                }
+//                catch(Exception ex){}
+//            }
+//        }
 
         // create timer, GPIO controller, and sunrise/sunset calculator
         timer = new Timer();        
         ss = new SunriseSunset();
-        
+
+        if(!runAsService)
+        {
+            // display welcome screen
+            displayWelcome();
+            
+            // prompt user for latitude if needed        
+            if(latitude == null)
+                promptForLatitude();
+            
+            // prompt user for longitude if needed
+            if(longitude == null)
+                promptForLongitude();
+    
+            // display welcome user options menu
+            displayMenuOptions();
+        }
+
         // schedule starting event; apply initial power controller state
         switch(scheduleNextEvent())
         {
@@ -129,117 +198,124 @@ public class SunriseSunsetPowerController
 
         // main program loop; 
         // process user input or wait for user to abort with CTRL-C
-        for(;;)
+        while(!shuttingDown)
         {
-            String command = System.console().readLine();
-            if(command.equalsIgnoreCase("on"))
+            if(runAsService)
             {
-                // turn ON power
-                powerController.on();
-                
-                System.out.println("---------------------------------");
-                System.out.println("[OVERRIDE] POWER STATE ON");
-                System.out.println("---------------------------------");
-
+                Thread.sleep(1000);
             }
-            else if(command.equalsIgnoreCase("off"))
+            else
             {
-                // turn OFF power
-                powerController.off();
-                
-                System.out.println("---------------------------------");
-                System.out.println("[OVERRIDE] POWER STATE OFF");
-                System.out.println("---------------------------------");
-            }
-            else if(command.equalsIgnoreCase("status"))
-            {
-                // determine and display current power controller state
-                if(powerController.isOn())
+                String command = System.console().readLine();
+                if(command.equalsIgnoreCase("on"))
                 {
+                    // turn ON power
+                    powerController.on();
+                    
                     System.out.println("---------------------------------");
-                    System.out.println("[STATUS] POWER STATE IS : ON");
+                    System.out.println("[OVERRIDE] POWER STATE ON");
+                    System.out.println("---------------------------------");
+    
+                }
+                else if(command.equalsIgnoreCase("off"))
+                {
+                    // turn OFF power
+                    powerController.off();
+                    
+                    System.out.println("---------------------------------");
+                    System.out.println("[OVERRIDE] POWER STATE OFF");
                     System.out.println("---------------------------------");
                 }
-                else
+                else if(command.equalsIgnoreCase("status"))
                 {
+                    // determine and display current power controller state
+                    if(powerController.isOn())
+                    {
+                        System.out.println("---------------------------------");
+                        System.out.println("[STATUS] POWER STATE IS : ON");
+                        System.out.println("---------------------------------");
+                    }
+                    else
+                    {
+                        System.out.println("---------------------------------");
+                        System.out.println("[STATUS] POWER STATE IS : OFF");
+                        System.out.println("---------------------------------");
+                    }
+                }
+                else if(command.equalsIgnoreCase("time"))
+                {
+                    // display current date/time
                     System.out.println("---------------------------------");
-                    System.out.println("[STATUS] POWER STATE IS : OFF");
+                    System.out.println("[CURRENT TIME] ");
+                    System.out.println(new Date());
                     System.out.println("---------------------------------");
                 }
-            }
-            else if(command.equalsIgnoreCase("time"))
-            {
-                // display current date/time
-                System.out.println("---------------------------------");
-                System.out.println("[CURRENT TIME] ");
-                System.out.println(new Date());
-                System.out.println("---------------------------------");
-            }
-            else if(command.equalsIgnoreCase("sunrise"))
-            {
-                // display sunrise date/time
-                System.out.println("---------------------------------");
-                System.out.println("[NEXT SUNRISE] ");
-                System.out.println(" @ " + nextSunriseDate);
-                System.out.println("---------------------------------");
-            }
-            else if(command.equalsIgnoreCase("sunset"))
-            {
-                // display sunset date/time
-                System.out.println("---------------------------------");
-                System.out.println("[NEXT SUNSET] ");
-                System.out.println(" @ " + nextSunsetDate);
-                System.out.println("---------------------------------");
-            }
-            else if(command.equalsIgnoreCase("coord"))
-            {
-                System.out.println("---------------------------------");
-                System.out.println("[LONGITUDE] = " + longitude);
-                System.out.println("[LATITUDE]  = " + latitude);
-                System.out.println("---------------------------------");
-            }
-            else if(command.equalsIgnoreCase("next"))
-            {
-                // display next scheduled event
-                switch(nextEvent)
+                else if(command.equalsIgnoreCase("sunrise"))
                 {
-                    case SunriseToday:
+                    // display sunrise date/time
+                    System.out.println("---------------------------------");
+                    System.out.println("[NEXT SUNRISE] ");
+                    System.out.println(" @ " + nextSunriseDate);
+                    System.out.println("---------------------------------");
+                }
+                else if(command.equalsIgnoreCase("sunset"))
+                {
+                    // display sunset date/time
+                    System.out.println("---------------------------------");
+                    System.out.println("[NEXT SUNSET] ");
+                    System.out.println(" @ " + nextSunsetDate);
+                    System.out.println("---------------------------------");
+                }
+                else if(command.equalsIgnoreCase("coord"))
+                {
+                    System.out.println("---------------------------------");
+                    System.out.println("[LONGITUDE] = " + longitude);
+                    System.out.println("[LATITUDE]  = " + latitude);
+                    System.out.println("---------------------------------");
+                }
+                else if(command.equalsIgnoreCase("next"))
+                {
+                    // display next scheduled event
+                    switch(nextEvent)
                     {
-                        System.out.println("-----------------------------------");
-                        System.out.println("[NEXT EVENT] SUNRISE TODAY ");
-                        System.out.println("  @ " + nextSunriseDate);
-                        System.out.println("-----------------------------------");
-                        break;
-                    }
-                    case SunsetToday:
-                    {
-                        System.out.println("-----------------------------------");
-                        System.out.println("[NEXT EVENT] SUNSET TODAY");
-                        System.out.println("  @ " + nextSunsetDate);
-                        System.out.println("-----------------------------------");
-                        break;
-                    }
-                    case SunriseTomorrow:
-                    {
-                        System.out.println("-----------------------------------");
-                        System.out.println("[NEXT EVENT] SUNRISE TOMORROW");
-                        System.out.println("  @ " + nextSunriseDate);
-                        System.out.println("-----------------------------------");
-                        break;
-                    }
-                }                
-            }
-            else if(command.equalsIgnoreCase("help"))
-            {
-                // display user options menu
-                displayMenuOptions();                
-            }            
-            else 
-            {
-                // un-handled command
-                System.out.println("---------------------------------");
-                System.out.println("[INVALID COMMAND ENTRY]");
-                System.out.println("---------------------------------");
+                        case SunriseToday:
+                        {
+                            System.out.println("-----------------------------------");
+                            System.out.println("[NEXT EVENT] SUNRISE TODAY ");
+                            System.out.println("  @ " + nextSunriseDate);
+                            System.out.println("-----------------------------------");
+                            break;
+                        }
+                        case SunsetToday:
+                        {
+                            System.out.println("-----------------------------------");
+                            System.out.println("[NEXT EVENT] SUNSET TODAY");
+                            System.out.println("  @ " + nextSunsetDate);
+                            System.out.println("-----------------------------------");
+                            break;
+                        }
+                        case SunriseTomorrow:
+                        {
+                            System.out.println("-----------------------------------");
+                            System.out.println("[NEXT EVENT] SUNRISE TOMORROW");
+                            System.out.println("  @ " + nextSunriseDate);
+                            System.out.println("-----------------------------------");
+                            break;
+                        }
+                    }                
+                }
+                else if(command.equalsIgnoreCase("help"))
+                {
+                    // display user options menu
+                    displayMenuOptions();                
+                }            
+                else 
+                {
+                    // un-handled command
+                    System.out.println("---------------------------------");
+                    System.out.println("[INVALID COMMAND ENTRY]");
+                    System.out.println("---------------------------------");
+                }
             }
         }
     }

@@ -1,0 +1,8 @@
+#!/bin/sh
+chmod 777 /opt/sspc/config/config.properties
+chmod 755 /opt/sspc/bin/start
+chmod 755 /opt/sspc/bin/stop
+chmod 755 /opt/sspc/bin/debug
+chmod 755 /etc/init.d/sspc
+update-rc.d sspc defaults
+service sspc start

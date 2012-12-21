@@ -1,0 +1,54 @@
+#! /bin/sh
+# /etc/init.d/sspc
+#
+
+### BEGIN INIT INFO 
+# Provides: automount 
+# Required-Start: $remote_fs $syslog 
+# Required-Stop: $remote_fs $syslog 
+# Default-Start: 2 3 4 5 
+# Default-Stop: 0 1 6 
+# Short-Description: Start SSPC application at boot time. 
+# Description: Start SSPC application at boot time. 
+### END INIT INFO 
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+
+  debug)
+    echo "--------------------------"
+    echo "Debugging SSPC Application"
+    echo "--------------------------"
+    cd /opt/sspc/bin
+    ./debug
+
+    ;;
+  start)
+    echo "-------------------------"
+    echo "Starting SSPC Application"
+    echo "-------------------------"
+    cd /opt/sspc/bin
+    ./start
+
+    ;;
+  stop)
+    echo "-------------------------"
+    echo "Stopping SSPC Application"
+    echo "-------------------------"
+    cd /opt/sspc/bin
+    ./stop
+
+    ;;
+  restart)
+    service sspc stop
+    service sspc start
+
+    ;;
+    
+  *)
+    echo "Usage: /etc/init.d/sspc {start|stop|restart|debug}"
+    exit 1
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,1 @@
+sudo jsvc -pidfile /var/run/sspc.pid -classpath classes:${0%/*}/../lib/'*' SSPC
