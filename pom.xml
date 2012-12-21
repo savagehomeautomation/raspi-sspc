@@ -66,6 +66,9 @@
 		<pi.password>raspberry</pi.password>
 		<pi.transfer>true</pi.transfer>
 		<pi.dirCopyTo>/home/pi</pi.dirCopyTo>
+		
+		<pi4j.version>0.0.4</pi4j.version>
+		<commons-daemon.version>1.0.10</commons-daemon.version>
 
 	</properties>
 
@@ -74,7 +77,7 @@
 		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-core</artifactId>
-			<version>0.0.4</version>
+			<version>${pi4j.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.pi4j</groupId>
@@ -85,7 +88,7 @@
 		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-device</artifactId>
-			<version>0.0.4</version>
+			<version>${pi4j.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.pi4j</groupId>
@@ -96,7 +99,7 @@
 		<dependency>
 			<groupId>commons-daemon</groupId>
 			<artifactId>commons-daemon</artifactId>
-			<version>1.0.10</version>
+			<version>${commons-daemon.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -279,19 +282,19 @@
 									<dst>/opt/sspc/README</dst>
 								</data>
 								<data>
-									<src>${project.build.directory}/distro-contents/lib/pi4j-core-0.0.4.jar</src>
+									<src>${project.build.directory}/distro-contents/lib/pi4j-core-${pi4j.version}.jar</src>
 									<type>file</type>
-									<dst>/opt/sspc/lib/pi4j-core-0.0.4.jar</dst>
+									<dst>/opt/sspc/lib/pi4j-core-${pi4j.version}.jar</dst>
 								</data>
 								<data>
-									<src>${project.build.directory}/distro-contents/lib/pi4j-device-0.0.4.jar</src>
+									<src>${project.build.directory}/distro-contents/lib/pi4j-device-${pi4j.version}.jar</src>
 									<type>file</type>
-									<dst>/opt/sspc/lib/pi4j-device-0.0.4.jar</dst>
+									<dst>/opt/sspc/lib/pi4j-device-${pi4j.version}.jar</dst>
 								</data>
 								<data>
-									<src>${project.build.directory}/distro-contents/lib/commons-daemon-1.0.10.jar</src>
+									<src>${project.build.directory}/distro-contents/lib/commons-daemon-${commons-daemon.version}.jar</src>
 									<type>file</type>
-									<dst>/opt/sspc/lib/commons-daemon-1.0.10.jar</dst>
+									<dst>/opt/sspc/lib/commons-daemon-${commons-daemon.version}.jar</dst>
 								</data>
 								<data>
 									<src>${project.build.directory}/distro-contents/lib/${project.build.finalName}.jar</src>
