@@ -4,6 +4,6 @@ Section: misc
 Priority: optional
 Architecture: all
 Depends:
-Maintainer: Robert Savage - www.savageHomeautomation.com
+Maintainer: Robert Savage - www.savagehomeautomation.com
 Description: Sunrise/Sunset Power Controller Application for the Raspberry Pi platform
 Distribution: development

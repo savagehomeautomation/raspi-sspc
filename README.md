@@ -28,13 +28,16 @@ Raspberry Pi - Sunrise / Sunset Power Controller
 
 ## IN DEVELOPMENT 
 
-2012-12-20 :: 1.0.1-SNAPSHOT
+2014-11-27 :: 1.0.1-SNAPSHOT
  
-    *  Development version - NOT RELEASED
-    *  Updated to Pi4J release version 0.0.4
+    *  Updated to Pi4J current version (1.0.0-SNAPSHOT)
     *  Updated to use Pi4J PowerController interface instead of raw GPIO pin.
+    *  Updated dependency versions
+    *  Removed Github upload plugin; no longer supported
+    *  Updated POM to work with Maven v3.x. 
     *  Added .DEB installer package
-    *  Added Debian init.d service scripts 
+    *  Added Debian init.d service scripts
+    *  Fixed #1: end of month issue
 
 
 ## RELEASES
@@ -48,6 +51,10 @@ Raspberry Pi - Sunrise / Sunset Power Controller
 
     *  A Java Virtual Machine must be installed.
     *  A JAVA_HOME environment variable must be defined.
+    *  Apache Commons Daemon must be installed. \
+       (http://commons.apache.org/proper/commons-daemon/jsvc.html)
+       "sudo apt-get install jsvc"
+    
  
  
 ## INSTALLATION INSTRUCTIONS

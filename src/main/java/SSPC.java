@@ -40,39 +40,28 @@ import com.savagehomeautomation.raspi.sspc.SunriseSunsetPowerController;
  * @author Robert Savage
  * @see http://www.savagehomeautomation.com/projects/raspberry-pi-sunrise-sunset-timer-for-christmas-lights.html
  */
-public class SSPC implements Daemon
-{
+public class SSPC implements Daemon {
+
     // create controller instance and start it up
     private static SunriseSunsetPowerController sspc;
     private static GpioPowerComponent powerController;
     
-    public static void main(String[] args) throws InterruptedException
-    {
+    public static void main(String[] args) throws InterruptedException {
         initializeApplicationConfiguration();
         sspc.start(false);
     }
     
-    private static void initializeApplicationConfiguration()
-    {
+    private static void initializeApplicationConfiguration() {
         // create GPIO controller
         GpioController gpio  = GpioFactory.getInstance();
 
         // provision GPIO pins : 
-        //   GPIO PIN #0 == OVERRIDE SWITCH
         //   GPIO PIN #1 == POWER CONTROLLER
-        //GpioPinDigitalInput overrideSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_00, "OverrideSwitch", PinPullResistance.PULL_DOWN);
         GpioPinDigitalOutput outputPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, "PowerController");
         
         // force power controller to OFF if the program is shutdown
         outputPin.setShutdownOptions(true,PinState.LOW);
         
-        // create a gpio toggle trigger on the override switch input pin; 
-        // when the input is detected, toggle the power controller state
-        //overrideSwitch.addTrigger(new GpioToggleStateTrigger(PinState.HIGH, powerController));
-        
-        // create a listener for the override switch
-        //overrideSwitch.addListener(new OverrideSwitchListener());
-
         // create power controller device component
         powerController = new GpioPowerComponent(outputPin, PinState.HIGH, PinState.LOW);
         
@@ -87,20 +76,17 @@ public class SSPC implements Daemon
     }
 
     @Override
-    public void init(DaemonContext context) throws DaemonInitException, Exception
-    {
+    public void init(DaemonContext context) throws DaemonInitException, Exception {
     }
 
     @Override
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         initializeApplicationConfiguration();
         sspc.start(true);
     }
 
     @Override
-    public void stop() throws Exception
-    {
+    public void stop() throws Exception {
         sspc.stop();
         powerController.off();
     }

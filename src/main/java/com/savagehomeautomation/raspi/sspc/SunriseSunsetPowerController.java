@@ -128,29 +128,6 @@ public class SunriseSunsetPowerController
         {
             ex.printStackTrace();
         }
-        
-        // attempt to read command line arguments
-//        for(String arg : args)
-//        {
-//            if(arg.startsWith("-longitude="))
-//            {
-//                try
-//                {
-//                    longitude = Double.parseDouble(arg.substring(11));
-//                    System.out.println("LONGITUDE = " + longitude);
-//                }
-//                catch(Exception ex){}
-//            }
-//            else if(arg.startsWith("-latitude="))
-//            {
-//                try
-//                {
-//                    latitude = Double.parseDouble(arg.substring(10));
-//                    System.out.println("LATITUDE  = " + latitude);
-//                }
-//                catch(Exception ex){}
-//            }
-//        }
 
         // create timer, GPIO controller, and sunrise/sunset calculator
         timer = new Timer();        
@@ -430,7 +407,7 @@ public class SunriseSunsetPowerController
 
         // get sunrise and sunset time for tomorrow
         Calendar tomorrow = Calendar.getInstance();
-        tomorrow.roll(Calendar.DATE, true);
+        tomorrow.add(Calendar.DATE, 1);
         Date tomorrow_sunrise = ss.getSunrise(latitude, longitude, tomorrow.getTime());
         Date tomorrow_sunset = ss.getSunset(latitude, longitude, tomorrow.getTime());
 
@@ -539,25 +516,5 @@ public class SunriseSunsetPowerController
             scheduleNextEvent();            
         }
     }
-    
-    /**
-     * This listener class is invoked as a callback when a state change
-     * is detected on the override input switch (if implemented; optional)
-     * 
-     * @author Robert Savage
-     */
-//    private class OverrideSwitchListener implements GpioPinListenerDigital
-//    {
-//        @Override
-//        public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event)
-//        {
-//            if(event.getState().isHigh())
-//            {
-//                System.out.println("---------------------------------");
-//                System.out.println("[OVERRIDE] POWER STATE TOGGLED");
-//                System.out.println("---------------------------------");
-//            }
-//        }
-//    }    
 }
 

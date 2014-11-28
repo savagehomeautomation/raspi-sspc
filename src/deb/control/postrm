@@ -1,2 +1,16 @@
-#!/bin/sh
-rm -r /opt/sspc
+#!/bin/bash
+
+set -e
+
+case "$1" in
+   remove)
+      rm -f -r /opt/sspc
+   ;;
+   purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+      echo $1
+    ;;
+   *)
+      echo "postinst called with unknown argument \`\$1'" >&2
+      exit 0
+   ;;
+esac

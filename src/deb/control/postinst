@@ -1,8 +1,22 @@
-#!/bin/sh
-chmod 777 /opt/sspc/config/config.properties
-chmod 755 /opt/sspc/bin/start
-chmod 755 /opt/sspc/bin/stop
-chmod 755 /opt/sspc/bin/debug
-chmod 755 /etc/init.d/sspc
-update-rc.d sspc defaults
-service sspc start
+#!/bin/bash
+
+set -e
+
+case "$1" in
+   configure)
+        chmod 777 /opt/sspc/config/config.properties
+        chmod 755 /opt/sspc/bin/start
+        chmod 755 /opt/sspc/bin/stop
+        chmod 755 /opt/sspc/bin/debug
+        chmod 755 /etc/init.d/sspc
+        update-rc.d sspc defaults
+        service sspc start
+   ;;
+   abort-upgrade|abort-remove|abort-deconfigure)
+      echo "$1"
+    ;;
+   *)
+      echo "postinst called with unknown argument \`\$1'" >&2
+      exit 0
+   ;;
+esac

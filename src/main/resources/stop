@@ -1,1 +1,2 @@
+#! /bin/sh
 sudo jsvc -stop -pidfile /var/run/sspc.pid -classpath classes:../lib/'*' SSPC
